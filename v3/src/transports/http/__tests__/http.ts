@@ -45,7 +45,7 @@ describe("processes an HTTP request", () => {
 
       await expect(response)
         .resolves
-        .toHaveProperty('statusCode', '2');
+        .toHaveProperty('statusCode', 200);
     });
   });
 
@@ -54,7 +54,9 @@ describe("processes an HTTP request", () => {
       it("is set to `application/json` on a successful request", async () => {
         const response = processHttpRequest(apollo, {
           method: 'POST',
-          headers: {},
+          headers: {
+            'content-type': 'application/json',
+          },
           parsedRequest: {
             query: "query { books { author } }",
           }

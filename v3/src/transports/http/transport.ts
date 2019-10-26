@@ -1,16 +1,7 @@
 import { ApolloServer } from "../../index";
 import { GraphQLRequest, GraphQLResponse } from '../../execution';
 import { IncomingHttpHeaders, OutgoingHttpHeaders } from 'http';
-
-/**
- * The existing `GraphQLRequest` and `GraphQLResponse` type includes `http`.
- * Going forward, however, the `http` definition will change and live within
- * the transport implementation.  Therefore, first we will use the existing
- * types, omit their `http` properties, and then re-extend them with new
- * implementations.
- */
-type GraphQLRequestWithoutHttp = Omit<GraphQLRequest, 'http'>
-type GraphQLResponseWithoutHttp = Omit<GraphQLResponse, 'http'>
+import { Headers } from "apollo-server-env";
 
 // interface GraphQLRequestWithHttp extends GraphQLRequestWithoutHttp {
 //   http: HttpRequest;
@@ -20,22 +11,18 @@ type GraphQLResponseWithoutHttp = Omit<GraphQLResponse, 'http'>
 //   http: HttpResponse;
 // }
 
-interface GraphQLResponseInitWithHttp extends GraphQLResponseWithoutHttp {
-  http: Partial<HttpResponse>;
-}
-
 export interface HttpRequest {
   method: string;
   headers: IncomingHttpHeaders;
   url?: string;
   // TODO body!
-  parsedRequest: GraphQLRequestWithoutHttp,
+  parsedRequest: GraphQLRequest,
 }
 
 export interface HttpResponse {
   statusCode: number;
   statusMessage?: string;
-  body: AsyncIterable<GraphQLResponseWithoutHttp>;
+  body: AsyncIterable<GraphQLResponse>;
   headers: OutgoingHttpHeaders;
 }
 
@@ -53,13 +40,13 @@ export async function processHttpRequest(
   httpRequest: HttpRequest,
 ): Promise<HttpResponse> {
 
-  // Create the shape of the response object. This should populate the request
+  // Create the shape of the response object. This should populate the response
   // context.
-  const responseInit: GraphQLResponseInitWithHttp = {
+  const responseInit: GraphQLResponse = {
     http: {
-      headers: {
-        'Content-Type': 'application/json',
-      }
+      headers: new Headers({
+        'content-Type': 'application/json',
+      }),
     }
   };
 
@@ -81,16 +68,12 @@ export async function processHttpRequest(
     },
   };
 
-  console.error(transportContext);
-
   return {
     body,
-    statusCode: 200,
-    headers: {
-    },
+    // TODO Wrong to default to 200 or empty headers but abandoning this.
+    statusCode: transportContext && transportContext.status || 200,
+    headers: transportContext && transportContext.headers && {
+      ...transportContext.headers,
+    } || {},
   };
 }
-
-/**
- * handler module
- */
