@@ -1,8 +1,8 @@
 import { IncomingMessage, RequestListener } from 'http';
 import { HttpRequest } from './transport';
-import { ApolloServer } from '../../';
 import { processHttpRequest } from './transport';
 import { GraphQLRequest } from '../../execution';
+import { GraphQLSchema } from "graphql";
 
 /**
  * A factory function that receives an instance of `ApolloServer` and returns
@@ -12,9 +12,9 @@ import { GraphQLRequest } from '../../execution';
  * @param apollo An instance of `ApolloServer`
  */
 export const httpHandler: (
-  apollo: ApolloServer,
-) => RequestListener = apollo => {
-  if (!(apollo instanceof ApolloServer)) {
+  schema: GraphQLSchema,
+) => RequestListener = schema => {
+  if (!(schema instanceof GraphQLSchema)) {
     throw new Error('Must pass an instance of ApolloServer');
   }
 
@@ -48,10 +48,10 @@ export const httpHandler: (
       method: req.method!,
     };
 
-    const httpGraphqlResponse = await processHttpRequest(
-      apollo,
-      httpGraphqlRequest,
-    );
+    const httpGraphqlResponse = await processHttpRequest({
+      schema,
+      request: httpGraphqlRequest,
+    });
 
     // Map headers
     for (const [key, value] of Object.entries(httpGraphqlResponse.headers)) {
