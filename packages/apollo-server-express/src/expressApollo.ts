@@ -33,7 +33,7 @@ export function graphqlExpress(
     runHttpQuery([req, res], {
       method: req.method,
       options: options,
-      query: req.method === 'POST' ? req.body : req.query,
+      query: {...req.query, ...(req.method === 'POST' ? req.body : {}},
       request: convertNodeHttpToRequest(req),
     }).then(
       ({ graphqlResponse, responseInit }) => {
